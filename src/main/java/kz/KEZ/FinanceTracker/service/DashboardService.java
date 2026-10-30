@@ -17,21 +17,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
+    private final TransactionService transactionService;
+    private final WalletsService walletsService;
 
-    private final UserRepository userRepository;
-    private final WalletsRepository walletsRepository;
-    private final TransactionRepository transactionRepository;
-
-    public DashboardDTO getDashboard(String email) {
-        User user = userRepository.findByEmail(email).orElseThrow();
-        LocalDate today = LocalDate.now();
-        LocalDate start = today.withDayOfMonth(1);
-        LocalDate end = today.withDayOfMonth(today.lengthOfMonth());
-
-        List<Wallet> wallets = walletsRepository.findByUserId(user.getId());
-
-        BigDecimal totalBalance = wallets.stream()
-                .map(Wallet::get)
-
+    public DashboardDTO build(User user) {
+        return new DashboardDTO(
+                transactionService.getBalance(user),
+                transactionService.getMonthExpenses(user),
+                walletsService.getUserWallets(user.getId()),
+                transactionService.getRecent(user, 10));
     }
 }

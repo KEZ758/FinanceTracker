@@ -12,11 +12,13 @@ import kz.KEZ.FinanceTracker.repositories.UserRepository;
 
 import kz.KEZ.FinanceTracker.repositories.WalletsRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -57,6 +59,7 @@ public class TransactionService {
 
     @Transactional
     public void deleteTransaction(Long id) {
+        User currentUser = transactionRepository.findByUser();
         transactionRepository.deleteById(id);
     }
 
@@ -140,5 +143,17 @@ public class TransactionService {
         transaction.setDate(LocalDateTime.now());
 
         transactionRepository.save(transaction);
+    }
+
+    public List<TransactionResponseDTO> getRecent(User user, int limit) {
+        return transactionRepository
+                .findByUserOrderByDateDescIdDesc(user, PageRequest.of(0, limit))
+                .stream().map(this::mapToResponseDTO).toList();
+    }
+
+    public BigDecimal getMonthExpenses(User user) {
+        LocalDate today = LocalDate.now();
+        LocalDateTime from = today.withDayOfMonth(1).atStartOfDay();
+        return transactionRepository.sumExpenses(user, from, from.plusMonths(1));
     }
 }
